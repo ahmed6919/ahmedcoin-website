@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <title>AhmedCoin | تجربة رمزية</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #121212;
+      color: #f0f0f0;
+      text-align: center;
+      padding-top: 50px;
+    }
+    button {
+      padding: 12px 24px;
+      margin: 10px;
+      font-size: 16px;
+      background-color: #1e88e5;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    h1 { color: #00ffcc; }
+  </style>
+</head>
+<body>
+  <h1>🎉 تجربة AhmedCoin على BNB Testnet</h1>
+
+  <p>🔹 انقر لإضافة AhmedCoin إلى محفظتك</p>
+  <button onclick="addToken()">➕ أضف AhmedCoin إلى MetaMask</button>
+
+  <p>🔹 احصل على 5 AHC مجانية</p>
+  <button onclick="sendToken()">🎁 احصل الآن</button>
+
+  <p style="margin-top: 40px;" id="balance">رصيدك: جارٍ التحميل...</p>
+
+  <p style="margin-top: 50px;">© 2025 AhmedDev</p>
+
+  <script>
+    const contractAddress = "0x1ea23b69f021e343b7f36ebd5ce80ce5862cece8";
+    const abi = [
+      "function transfer(address to, uint amount) public returns (bool)",
+      "function balanceOf(address owner) view returns (uint256)",
+      "function decimals() public view returns (uint8)"
+    ];
+
+    async function addToken() {
+      try {
+        await ethereum.request({
+          method: 'wallet_watchAsset',
+          params: {
+            type: 'ERC20',
+            options: {
+              address: contractAddress,
+              symbol: 'AHC',
+              decimals: 0,
+            },
+          },
+        });
+      } catch (err) {
+        alert("❌ فشل الإضافة: " + err.message);
+      }
+    }
+
+    async function sendToken() {
+      try {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+        const address = await signer.getAddress();
+        const contract = new ethers.Contract(contractAddress, abi, signer);
+        const balance = await contract.balanceOf(address);
+        if (balance.toNumber() >= 5) {
+          const tx = await contract.transfer(address, 5);
+          await tx.wait();
+          alert("🎉 تم إرسال 5 AHC إليك بنجاح!");
+        } else {
+          alert("⚠️ لا يوجد رصيد كافٍ. تأكد أنك مالك العقد.");
+        }
+        updateBalance();
+      } catch (err) {
+        alert("❌ فشل الإرسال: " + err.message);
+      }
+    }
+
+    async function updateBalance() {
+      try {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        const signer = provider.getSigner();
+        const address = await signer.getAddress();
+        const contract = new ethers.Contract(contractAddress, abi, provider);
+        const balance = await contract.balanceOf(address);
+        document.getElementById("balance").innerText = "رصيدك: " + balance.toString() + " AHC";
+      } catch {
+        document.getElementById("balance").innerText = "🔄 لم نتمكن من عرض الرصيد";
+      }
+    }
+
+    window.addEventListener('load', async () => {
+      if (window.ethereum) {
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        updateBalance();
+      }
+    });
+  </script>
+</body>
+</html>
